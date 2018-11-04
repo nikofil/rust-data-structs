@@ -1,0 +1,6 @@
+[package]
+name = "rust-data-structs"
+version = "0.1.0"
+authors = ["Nikos Filippakis <aesmade@gmail.com>"]
+
+[dependencies]
