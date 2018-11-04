@@ -37,6 +37,10 @@ impl<T> ConsList<T> {
         Iter{cur: self.0.as_ref()}
     }
 
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        IterMut{cur: self.0.as_mut()}
+    }
+
     pub fn into_iter(self) -> IntoIter<T> {
         IntoIter{list: self}
     }
@@ -53,6 +57,22 @@ impl<'a, T: 'a> Iterator for Iter<'a, T> {
         self.cur.take().map(|cur| {
             self.cur = cur.next.as_ref();
             &cur.elem
+        })
+    }
+}
+
+pub struct IterMut<'a, T: 'a> {
+    cur: Option<&'a mut Box<Node<T>>>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        self.cur.take().map(|cur| {
+            let cur = &mut **cur;
+            self.cur = cur.next.as_mut();
+            &mut cur.elem
         })
     }
 }
@@ -154,5 +174,16 @@ mod tests {
         assert_eq!(v, vec![&20, &10]);
         let v: Vec<&i32> = new.iter().collect();
         assert_eq!(v, vec![&20, &10]);
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut new = ConsList::new();
+        new.push(10);
+        new.push(20);
+        new.iter_mut().for_each(|x| *x += 1);
+        new.iter_mut().for_each(|x| *x *= 2);
+        let v: Vec<&i32> = new.iter().collect();
+        assert_eq!(v, vec![&42, &22]);
     }
 }
