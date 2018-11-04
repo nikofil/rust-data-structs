@@ -22,6 +22,13 @@ impl<T> LinkedList<T> {
         let new_node = Node{val, next: old_head};
         self.head = Some(Rc::new(RefCell::new(new_node)));
     }
+
+    pub fn tail(&self) -> LinkedList<T> {
+        let tail = self.head.as_ref().and_then(
+            |first| first.borrow().next.as_ref().map(|x| Rc::clone(x))
+        );
+        LinkedList{head: tail}
+    }
 }
 
 #[cfg(test)]
@@ -34,5 +41,14 @@ mod tests {
         assert_eq!(list.head.as_ref().unwrap().borrow().val, 1);
         list.insert(2);
         assert_eq!(list.head.as_ref().unwrap().borrow().val, 2);
+    }
+
+    #[test]
+    fn test_tail() {
+        let mut list = LinkedList::new();
+        list.insert(String::from("a"));
+        list.insert(String::from("b"));
+        let tail = list.tail();
+        assert_eq!(tail.head.as_ref().unwrap().borrow().val, "a");
     }
 }
