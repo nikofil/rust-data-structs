@@ -28,6 +28,10 @@ impl<T> ConsList<T> {
     pub fn peek(&self) -> Option<&T> {
         self.0.as_ref().map(|head| &head.elem)
     }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.0.as_mut().map(|head| &mut head.elem)
+    }
 }
 
 impl<T> Drop for ConsList<T> {
@@ -83,5 +87,13 @@ mod tests {
         new.push(String::from("a"));
         assert_eq!(new.peek(), Some(&String::from("a")));
         assert_eq!(new.peek(), Some(&String::from("a")));
+    }
+
+    #[test]
+    fn peek_mut_str() {
+        let mut new = ConsList::new();
+        new.push(String::from("a"));
+        new.peek_mut().map(|s| s.push_str("bc"));
+        assert_eq!(new.peek(), Some(&String::from("abc")));
     }
 }
