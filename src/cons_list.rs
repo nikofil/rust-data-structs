@@ -24,6 +24,10 @@ impl<T> ConsList<T> {
             node.elem
         })
     }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.0.as_ref().map(|head| &head.elem)
+    }
 }
 
 impl<T> Drop for ConsList<T> {
@@ -61,7 +65,7 @@ mod tests {
     }
 
     #[test]
-    fn pop_ints() {
+    fn pop_strs() {
         let mut new = ConsList::new();
         new.push(String::from("a"));
         new.push(String::from("b"));
@@ -70,5 +74,14 @@ mod tests {
         assert_eq!(new.pop(), Some(String::from("b")));
         assert_eq!(new.pop(), Some(String::from("a")));
         assert_eq!(new.pop(), None);
+    }
+
+    #[test]
+    fn peek_str() {
+        let mut new = ConsList::new();
+        assert_eq!(new.peek(), None);
+        new.push(String::from("a"));
+        assert_eq!(new.peek(), Some(&String::from("a")));
+        assert_eq!(new.peek(), Some(&String::from("a")));
     }
 }
