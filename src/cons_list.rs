@@ -32,6 +32,41 @@ impl<T> ConsList<T> {
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.0.as_mut().map(|head| &mut head.elem)
     }
+
+    pub fn iter(&self) -> Iter<T> {
+        Iter{cur: self.0.as_ref()}
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter{list: self}
+    }
+}
+
+pub struct Iter<'a, T: 'a> {
+    cur: Option<&'a Box<Node<T>>>,
+}
+
+impl<'a, T: 'a> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        self.cur.take().map(|cur| {
+            self.cur = cur.next.as_ref();
+            &cur.elem
+        })
+    }
+}
+
+pub struct IntoIter<T> {
+    list: ConsList<T>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        self.list.pop()
+    }
 }
 
 impl<T> Drop for ConsList<T> {
@@ -95,5 +130,29 @@ mod tests {
         new.push(String::from("a"));
         new.peek_mut().map(|s| s.push_str("bc"));
         assert_eq!(new.peek(), Some(&String::from("abc")));
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut new = ConsList::new();
+        new.push(10);
+        new.push(20);
+        new.push(30);
+        let mut iter = new.into_iter();
+        assert_eq!(iter.next(), Some(30));
+        assert_eq!(iter.next(), Some(20));
+        assert_eq!(iter.next(), Some(10));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut new = ConsList::new();
+        new.push(10);
+        new.push(20);
+        let v: Vec<&i32> = new.iter().collect();
+        assert_eq!(v, vec![&20, &10]);
+        let v: Vec<&i32> = new.iter().collect();
+        assert_eq!(v, vec![&20, &10]);
     }
 }
