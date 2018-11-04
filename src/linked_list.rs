@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::cell::Ref;
 
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
@@ -23,11 +24,28 @@ impl<T> LinkedList<T> {
         self.head = Some(Rc::new(RefCell::new(new_node)));
     }
 
+    pub fn head(&self) -> Option<Ref<T>> {
+        self.head.as_ref().map(|h| Ref::map(h.borrow(), |x| &x.val))
+    }
+
     pub fn tail(&self) -> LinkedList<T> {
         let tail = self.head.as_ref().and_then(
             |first| first.borrow().next.as_ref().map(|x| Rc::clone(x))
         );
         LinkedList{head: tail}
+    }
+}
+
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        let mut next = self.head.take();
+        while let Some(node) = next {
+            next = if let Ok(node) = Rc::try_unwrap(node) {
+                node.borrow_mut().next.take()
+            } else {
+                break;
+            }
+        }
     }
 }
 
@@ -38,9 +56,9 @@ mod tests {
     fn test_insert() {
         let mut list = LinkedList::new();
         list.insert(1);
-        assert_eq!(list.head.as_ref().unwrap().borrow().val, 1);
+        assert_eq!(&*list.head().unwrap(), &1);
         list.insert(2);
-        assert_eq!(list.head.as_ref().unwrap().borrow().val, 2);
+        assert_eq!(&*list.head().unwrap(), &2);
     }
 
     #[test]
@@ -49,6 +67,6 @@ mod tests {
         list.insert(String::from("a"));
         list.insert(String::from("b"));
         let tail = list.tail();
-        assert_eq!(tail.head.as_ref().unwrap().borrow().val, "a");
+        assert_eq!(&*tail.head().unwrap(), "a");
     }
 }
