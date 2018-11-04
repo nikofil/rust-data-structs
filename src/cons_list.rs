@@ -1,9 +1,4 @@
-use std::mem;
-
-pub enum Link<T> {
-    More(Box<Node<T>>),
-    None,
-}
+type Link<T> = Option<Box<Node<T>>>;
 
 pub struct Node<T> {
     elem: T,
@@ -14,32 +9,28 @@ pub struct ConsList<T>(Link<T>);
 
 impl<T> ConsList<T> {
     pub fn new() -> ConsList<T> {
-        ConsList(Link::None)
+        ConsList(None)
     }
 
     pub fn push(&mut self, val: T) {
-        let old_head = mem::replace(&mut self.0, Link::None);
-        let new = Node{elem: val, next: old_head};
-        self.0 = Link::More(Box::new(new));
+        let new = Node{elem: val, next: self.0.take()};
+        self.0 = Some(Box::new(new));
     }
 
     pub fn pop(&mut self) -> Option<T> {
-        match mem::replace(&mut self.0, Link::None){
-            Link::More(node) => {
-                let node = *node;
-                self.0 = node.next;
-                Some(node.elem)
-            },
-            Link::None => None,
-        }
+        self.0.take().map(|node| {
+            let node = *node;
+            self.0 = node.next;
+            node.elem
+        })
     }
 }
 
 impl<T> Drop for ConsList<T> {
     fn drop(&mut self) {
-        let mut link = mem::replace(&mut self.0, Link::None);
-        while let Link::More(mut next_node) = link {
-            link = mem::replace(&mut next_node.next, Link::None);
+        let mut link = self.0.take();
+        while let Some(mut next_node) = link {
+            link = next_node.next.take();
         }
     }
 }
@@ -51,7 +42,7 @@ mod tests {
     #[test]
     fn create_new() {
         let new: ConsList<i32> = ConsList::new();
-        if let Link::More(_) = new.0 {
+        if new.0.is_some() {
             panic!("Should be none");
         }
     }
@@ -62,7 +53,7 @@ mod tests {
         new.push(10);
         new.push(20);
         new.push(30);
-        if let Link::More(ref first_node) = new.0 {
+        if let Some(ref first_node) = new.0 {
             assert_eq!(first_node.elem, 30);
         } else {
             panic!("No first node");
