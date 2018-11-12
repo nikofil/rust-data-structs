@@ -42,6 +42,17 @@ impl<T> DoublyLinkedList<T> {
         }, |node| node.borrow_mut().prev = Some(Rc::clone(&new)));
         self.head = Some(Rc::clone(&new));
     }
+
+    pub fn push_back(&mut self, elem: T) {
+        let mut new_node = Node::new(elem);
+        let old_tail = self.tail.take();
+        new_node.prev = old_tail;
+        let new = Rc::new(RefCell::new(new_node));
+        new.borrow_mut().prev.as_ref().map_or_else(|| {
+            self.head = Some(Rc::clone(&new));
+        }, |node| node.borrow_mut().next = Some(Rc::clone(&new)));
+        self.tail = Some(Rc::clone(&new));
+    }
 }
 
 #[cfg(test)]
@@ -51,11 +62,24 @@ mod tests {
     #[test]
     fn test_push_front() {
         let mut list = DoublyLinkedList::new();
-        list.push_front(String::from("second"));
         list.push_front(String::from("first"));
+        list.push_front(String::from("second"));
         let head = list.head.as_ref().unwrap().borrow();
         let tail = list.tail.as_ref().unwrap().borrow();
         assert_eq!(head.elem, "second");
         assert_eq!(tail.elem, "first");
+    }
+
+    #[test]
+    fn test_push_back() {
+        let mut list = DoublyLinkedList::new();
+        list.push_back(String::from("first"));
+        list.push_front(String::from("second"));
+        list.push_back(String::from("third"));
+        let head = list.head.as_ref().unwrap().borrow();
+        let tail = list.tail.as_ref().unwrap().borrow();
+        assert_eq!(head.elem, "second");
+        assert_eq!(head.next.as_ref().unwrap().borrow().elem, "first");
+        assert_eq!(tail.elem, "third");
     }
 }
