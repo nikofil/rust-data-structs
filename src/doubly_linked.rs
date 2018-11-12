@@ -53,6 +53,40 @@ impl<T> DoublyLinkedList<T> {
         }, |node| node.borrow_mut().next = Some(Rc::clone(&new)));
         self.tail = Some(Rc::clone(&new));
     }
+
+    pub fn pop_front(&mut self) -> Option<T> {
+        let head = self.head.take();
+        head.map(|head| {
+            match &head.borrow().next {
+                None => {
+                    self.tail.take();
+                },
+                Some(snd) => {
+                    self.head = Some(Rc::clone(&snd));
+                    let mut snd = snd.borrow_mut();
+                    snd.prev = None;
+                },
+            }
+            Rc::try_unwrap(head).ok().unwrap().into_inner().elem
+        })
+    }
+
+    pub fn pop_back(&mut self) -> Option<T> {
+        let tail = self.tail.take();
+        tail.map(|tail| {
+            match &tail.borrow().prev {
+                None => {
+                    self.head.take();
+                },
+                Some(snd) => {
+                    self.tail = Some(Rc::clone(&snd));
+                    let mut snd = snd.borrow_mut();
+                    snd.next = None;
+                },
+            }
+            Rc::try_unwrap(tail).ok().unwrap().into_inner().elem
+        })
+    }
 }
 
 #[cfg(test)]
@@ -81,5 +115,31 @@ mod tests {
         assert_eq!(head.elem, "second");
         assert_eq!(head.next.as_ref().unwrap().borrow().elem, "first");
         assert_eq!(tail.elem, "third");
+    }
+
+    #[test]
+    fn test_pop() {
+        let mut list = DoublyLinkedList::new();
+        list.push_front(String::from("first"));
+        list.push_front(String::from("second"));
+        list.push_back(String::from("third"));
+        let first = list.pop_front();
+        assert_eq!(first.unwrap(), "second");
+        let first = list.pop_back();
+        assert_eq!(first.unwrap(), "third");
+        let first = list.pop_back();
+        assert_eq!(first.unwrap(), "first");
+        let first = list.pop_front();
+        assert!(first.is_none());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_pop_panic() {
+        let mut list = DoublyLinkedList::new();
+        list.push_front(String::from("first"));
+        let first_ref = Rc::clone(list.head.as_ref().unwrap());
+        let _mut_borrow = first_ref.borrow_mut();
+        list.pop_front();
     }
 }
