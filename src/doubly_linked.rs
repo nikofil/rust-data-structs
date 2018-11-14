@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::cell::Ref;
 
 pub type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
@@ -87,6 +88,10 @@ impl<T> DoublyLinkedList<T> {
             Rc::try_unwrap(tail).ok().unwrap().into_inner().elem
         })
     }
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        self.head.as_ref().map(|first| Ref::map(first.borrow(), |r| &r.elem))
+    }
 }
 
 impl<T> Drop for DoublyLinkedList<T> {
@@ -147,5 +152,17 @@ mod tests {
         let first_ref = Rc::clone(list.head.as_ref().unwrap());
         let _mut_borrow = first_ref.borrow_mut();
         list.pop_front();
+    }
+
+    #[test]
+    fn test_peek_front() {
+        let mut list = DoublyLinkedList::new();
+        assert!(list.peek_front().is_none());
+        list.push_back(String::from("first"));
+        assert_eq!(&*list.peek_front().unwrap(), "first");
+        list.push_front(String::from("second"));
+        assert_eq!(&*list.peek_front().unwrap(), "second");
+        list.pop_front();
+        assert_eq!(&*list.peek_front().unwrap(), "first");
     }
 }
