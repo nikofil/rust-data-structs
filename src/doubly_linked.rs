@@ -90,7 +90,13 @@ impl<T> DoublyLinkedList<T> {
     }
 
     pub fn peek_front(&self) -> Option<Ref<T>> {
-        self.head.as_ref().map(|first| Ref::map(first.borrow(), |r| &r.elem))
+        self.head.as_ref().map(|first|
+            Ref::map(first.borrow(), |r| &r.elem))
+    }
+
+    pub fn peek_back(&self) -> Option<Ref<T>> {
+        self.tail.as_ref().map(|last|
+            Ref::map(last.borrow(), |r| &r.elem))
     }
 }
 
@@ -158,11 +164,15 @@ mod tests {
     fn test_peek_front() {
         let mut list = DoublyLinkedList::new();
         assert!(list.peek_front().is_none());
+        assert!(list.peek_back().is_none());
         list.push_back(String::from("first"));
         assert_eq!(&*list.peek_front().unwrap(), "first");
+        assert_eq!(&*list.peek_back().unwrap(), "first");
         list.push_front(String::from("second"));
         assert_eq!(&*list.peek_front().unwrap(), "second");
-        list.pop_front();
-        assert_eq!(&*list.peek_front().unwrap(), "first");
+        assert_eq!(&*list.peek_back().unwrap(), "first");
+        list.pop_back();
+        assert_eq!(&*list.peek_front().unwrap(), "second");
+        assert_eq!(&*list.peek_back().unwrap(), "second");
     }
 }
