@@ -116,6 +116,12 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<<Self as Iterator>::Item> {
+        self.list.pop_back()
+    }
+}
+
 impl<T> Drop for DoublyLinkedList<T> {
     fn drop(&mut self) {
         while self.pop_front().is_some() {}
@@ -200,6 +206,17 @@ mod tests {
         let mut iter = list.into_iter();
         assert_eq!(iter.next().unwrap(), "second");
         assert_eq!(iter.next().unwrap(), "first");
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_into_iter_rev() {
+        let mut list = DoublyLinkedList::new();
+        list.push_front(String::from("first"));
+        list.push_front(String::from("second"));
+        let mut iter = list.into_iter().rev();
+        assert_eq!(iter.next().unwrap(), "first");
+        assert_eq!(iter.next().unwrap(), "second");
         assert!(iter.next().is_none());
     }
 }
