@@ -98,6 +98,22 @@ impl<T> DoublyLinkedList<T> {
         self.tail.as_ref().map(|last|
             Ref::map(last.borrow(), |r| &r.elem))
     }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter{list: self}
+    }
+}
+
+pub struct IntoIter<T> {
+    list: DoublyLinkedList<T>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        self.list.pop_front()
+    }
 }
 
 impl<T> Drop for DoublyLinkedList<T> {
@@ -174,5 +190,16 @@ mod tests {
         list.pop_back();
         assert_eq!(&*list.peek_front().unwrap(), "second");
         assert_eq!(&*list.peek_back().unwrap(), "second");
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let mut list = DoublyLinkedList::new();
+        list.push_front(String::from("first"));
+        list.push_front(String::from("second"));
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next().unwrap(), "second");
+        assert_eq!(iter.next().unwrap(), "first");
+        assert!(iter.next().is_none());
     }
 }
