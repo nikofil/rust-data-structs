@@ -99,13 +99,34 @@ impl<T> DoublyLinkedList<T> {
             Ref::map(last.borrow(), |r| &r.elem))
     }
 
+    pub fn iter(&self) -> Iter<T> {
+        Iter { cur: self.head.as_ref().map(Rc::clone) }
+    }
+
     pub fn into_iter(self) -> IntoIter<T> {
         IntoIter{list: self}
     }
 }
 
+pub struct Iter<T> {
+    cur: Link<T>,
+}
+
 pub struct IntoIter<T> {
     list: DoublyLinkedList<T>,
+}
+
+impl<'a, T: 'a> Iterator for Iter<T> {
+    type Item = Rc<RefCell<Node<T>>>;
+
+    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        self.cur.take().map(|c| {
+            let rv = Rc::clone(&c);
+            let next = &c.borrow().next;
+            self.cur = next.as_ref().map(Rc::clone);
+            rv
+        })
+    }
 }
 
 impl<T> Iterator for IntoIter<T> {
@@ -218,5 +239,23 @@ mod tests {
         assert_eq!(iter.next().unwrap(), "first");
         assert_eq!(iter.next().unwrap(), "second");
         assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_iter() {
+        let mut list = DoublyLinkedList::new();
+        list.push_front(String::from("first"));
+        list.push_front(String::from("second"));
+        let mut iter = list.iter();
+        let n = iter.next().unwrap();
+        assert_eq!(&*n.borrow().elem, "second");
+        let n = iter.next().unwrap();
+        assert_eq!(&*n.borrow().elem, "first");
+        assert!(iter.next().is_none());
+        let mut iter = list.iter();
+        let n = iter.next().unwrap();
+        assert_eq!(&*n.borrow().elem, "second");
+        let n = iter.next().unwrap();
+        assert_eq!(&*n.borrow().elem, "first");
     }
 }
